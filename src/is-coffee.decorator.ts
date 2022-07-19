@@ -17,19 +17,20 @@ import { RequestService } from './request/request.service';
 import { Request } from 'express';
 
 @ValidatorConstraint({ name: 'IsCoffeeValidator', async: true })
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class IsCoffeeValidator
   implements ValidatorConstraintInterface, OnModuleInit
 {
   private requestService: RequestService;
   constructor(
     @Inject(REQUEST) private request: Request,
+    // @Inject(RequestService) private requestService: RequestService, // A normal DI doesn't work
     private moduleRef: ModuleRef,
   ) {}
 
   async onModuleInit() {
     const contextId = ContextIdFactory.getByRequest(this.request);
-
+    console.log('In onModuleInit'); // Doesn't get called, presumably because this is dependent upon a request-scoped service(?)
     this.requestService = await this.moduleRef.resolve(
       RequestService,
       contextId,
@@ -38,7 +39,7 @@ export class IsCoffeeValidator
   }
   async validate(type: string, { object }: ValidationArguments) {
     const contextId = ContextIdFactory.getByRequest(this.request);
-    this.requestService = await this.moduleRef.resolve(
+    this.requestService = await this.moduleRef.resolve( // Fails with "cannot read property resolve of undefined" 
       RequestService,
       contextId,
       { strict: false },
